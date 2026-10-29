@@ -20,7 +20,7 @@ public class StaticResourceConfig implements WebMvcConfigurer {
         add(registry, "/reservation/**", "file:./reservation/");
         add(registry, "/admin/**", "file:./admin/");
         add(registry, "/docs/**", "file:./docs/");
-        registry.addResourceHandler("/", "/index.html")
+        registry.addResourceHandler("/**")
                 .addResourceLocations("file:./");
     }
 
