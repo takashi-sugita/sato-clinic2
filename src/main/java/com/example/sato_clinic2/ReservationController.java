@@ -73,7 +73,7 @@ public class ReservationController {
                 SELECT id, patient_type AS patientType, card_number AS cardNumber, department,
                        patient_name AS name, patient_kana AS kana, patient_phone AS phone, reserve_date AS date,
                        reserve_time AS time, status, created_at AS createdAt
-                FROM reservations WHERE status = 'booked' ORDER BY reserve_date, reserve_time
+                FROM reservations ORDER BY reserve_date, reserve_time, id
                 """));
     }
 
@@ -83,6 +83,14 @@ public class ReservationController {
         if (!AdminAuthController.isLoggedIn(request)) return error(HttpStatus.UNAUTHORIZED, "ログインが必要です。");
         int updated = jdbc.update("UPDATE reservations SET status = 'cancelled' WHERE id = ? AND status = 'booked'", id);
         return updated == 0 ? error(HttpStatus.NOT_FOUND, "予約が見つかりません。") : ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/admin/reservations/{id}/permanent")
+    public ResponseEntity<?> delete(@PathVariable long id,
+            org.springframework.web.context.request.WebRequest request) {
+        if (!AdminAuthController.isLoggedIn(request)) return error(HttpStatus.UNAUTHORIZED, "Not logged in");
+        int deleted = jdbc.update("DELETE FROM reservations WHERE id = ?", id);
+        return deleted == 0 ? error(HttpStatus.NOT_FOUND, "Reservation not found") : ResponseEntity.noContent().build();
     }
 
     private static String blankToNull(String value) {

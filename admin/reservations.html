@@ -1,19 +1,70 @@
 <!doctype html>
 <html lang="ja">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>予約管理｜佐藤医院</title><link rel="stylesheet" href="../css/style.css"></head>
-<body><main class="content-section"><div class="container"><h1 class="content-title">予約管理</h1><table class="admin-reservation-table"><thead><tr><th>予約日</th><th>予約時間</th><th>区分</th><th>診療科目</th><th>診察券番号</th><th>お名前</th><th>電話番号</th><th>操作</th></tr></thead><tbody id="reservation-list"><tr><td colspan="8">読み込み中…</td></tr></tbody></table><p><a href="index.html">管理画面へ戻る</a></p></div></main>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>予約管理｜佐藤医院</title>
+  <link rel="stylesheet" href="../css/style.css?v=20261029-7">
+</head>
+<body>
+<main class="content-section admin-reservation-page">
+  <div class="container">
+    <div class="reservation-heading">
+      <h1 class="content-title">予約管理</h1>
+      <label class="reservation-filter"><input id="show-cancelled" type="checkbox"> キャンセルも表示</label>
+    </div>
+    <table class="admin-reservation-table">
+      <thead><tr>
+        <th>予約日</th><th>予約時間</th><th>区分</th><th>診療科</th><th>診察券番号</th>
+        <th>お名前</th><th>フリガナ</th><th>電話番号</th><th>状態</th><th>操作</th>
+      </tr></thead>
+      <tbody id="reservation-list"><tr><td colspan="10">読み込み中…</td></tr></tbody>
+    </table>
+    <p><a href="index.html">管理画面へ戻る</a></p>
+  </div>
+</main>
 <script>
-const headerCells = document.querySelectorAll('thead th');
-headerCells[5].insertAdjacentHTML('afterend', '<th>フリガナ</th>');
+const list = document.querySelector('#reservation-list');
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[character]));
+
 async function draw() {
   const response = await fetch('../api/admin/reservations');
   if (response.status === 401) { location.href = 'index.html'; return; }
   const rows = await response.json();
-  document.querySelector('#reservation-list').innerHTML = rows.length ? rows.map(r => `<tr><td>${String(r.date).slice(0, 10)}</td><td>${r.time}</td><td>${r.patientType === 'existing' ? '再診' : '初診'}</td><td>${r.department}</td><td>${r.cardNumber || ''}</td><td>${r.name}</td><td>${r.phone}</td><td><button class="reservation-cancel" type="button" data-id="${r.id}">キャンセル</button></td></tr>`).join('') : '<tr><td colspan="8">予約はありません。</td></tr>';
-  document.querySelectorAll('#reservation-list tr').forEach((row, index) => {
-    if (rows[index]) row.querySelectorAll('td')[5].insertAdjacentHTML('afterend', `<td>${rows[index].kana || ''}</td>`);
+  const showCancelled = document.querySelector('#show-cancelled').checked;
+  const visibleRows = showCancelled ? rows : rows.filter(row => row.status !== 'cancelled');
+  if (!visibleRows.length) {
+    list.innerHTML = '<tr><td colspan="10">予約はありません。</td></tr>';
+    return;
+  }
+  list.innerHTML = visibleRows.map(r => {
+    const cancelled = r.status === 'cancelled';
+    const action = cancelled
+      ? `<button class="reservation-delete" type="button" data-id="${r.id}">削除</button>`
+      : `<button class="reservation-cancel" type="button" data-id="${r.id}">キャンセル</button>`;
+    return `<tr class="${cancelled ? 'is-cancelled' : ''}">
+      <td>${escapeHtml(String(r.date).slice(0, 10))}</td><td>${escapeHtml(r.time)}</td>
+      <td>${r.patientType === 'existing' ? '再診' : '初診'}</td><td>${escapeHtml(r.department)}</td>
+      <td>${escapeHtml(r.cardNumber)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.kana)}</td>
+      <td>${escapeHtml(r.phone)}</td><td>${cancelled ? 'cancelled' : 'booked'}</td><td>${action}</td>
+    </tr>`;
+  }).join('');
+
+  list.querySelectorAll('.reservation-cancel').forEach(button => button.onclick = async () => {
+    if (!confirm('この予約をキャンセルしますか？')) return;
+    await fetch(`../api/admin/reservations/${button.dataset.id}`, { method: 'DELETE' });
+    draw();
   });
-  document.querySelectorAll('.reservation-cancel').forEach(button => button.onclick = async () => { if (!confirm('この予約をキャンセルしますか？')) return; await fetch(`../api/admin/reservations/${button.dataset.id}`, { method: 'DELETE' }); draw(); });
+  list.querySelectorAll('.reservation-delete').forEach(button => button.onclick = async () => {
+    if (!confirm('この予約を完全に削除しますか？')) return;
+    const result = await fetch(`../api/admin/reservations/${button.dataset.id}/permanent`, { method: 'DELETE' });
+    if (result.ok) draw();
+  });
 }
+document.querySelector('#show-cancelled').addEventListener('change', draw);
 draw();
-</script></body></html>
+</script>
+</body>
+</html>
