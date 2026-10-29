@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   card_number VARCHAR(32) NULL,
   department VARCHAR(100) NOT NULL,
   patient_name VARCHAR(100) NOT NULL,
+  patient_kana VARCHAR(100) NOT NULL,
   patient_phone VARCHAR(30) NOT NULL,
   reserve_date DATE NOT NULL,
   reserve_time VARCHAR(20) NOT NULL,

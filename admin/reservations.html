@@ -3,11 +3,16 @@
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>予約管理｜佐藤医院</title><link rel="stylesheet" href="../css/style.css"></head>
 <body><main class="content-section"><div class="container"><h1 class="content-title">予約管理</h1><table class="admin-reservation-table"><thead><tr><th>予約日</th><th>予約時間</th><th>区分</th><th>診療科目</th><th>診察券番号</th><th>お名前</th><th>電話番号</th><th>操作</th></tr></thead><tbody id="reservation-list"><tr><td colspan="8">読み込み中…</td></tr></tbody></table><p><a href="index.html">管理画面へ戻る</a></p></div></main>
 <script>
+const headerCells = document.querySelectorAll('thead th');
+headerCells[5].insertAdjacentHTML('afterend', '<th>フリガナ</th>');
 async function draw() {
   const response = await fetch('../api/admin/reservations');
   if (response.status === 401) { location.href = 'index.html'; return; }
   const rows = await response.json();
   document.querySelector('#reservation-list').innerHTML = rows.length ? rows.map(r => `<tr><td>${String(r.date).slice(0, 10)}</td><td>${r.time}</td><td>${r.patientType === 'existing' ? '再診' : '初診'}</td><td>${r.department}</td><td>${r.cardNumber || ''}</td><td>${r.name}</td><td>${r.phone}</td><td><button class="reservation-cancel" type="button" data-id="${r.id}">キャンセル</button></td></tr>`).join('') : '<tr><td colspan="8">予約はありません。</td></tr>';
+  document.querySelectorAll('#reservation-list tr').forEach((row, index) => {
+    if (rows[index]) row.querySelectorAll('td')[5].insertAdjacentHTML('afterend', `<td>${rows[index].kana || ''}</td>`);
+  });
   document.querySelectorAll('.reservation-cancel').forEach(button => button.onclick = async () => { if (!confirm('この予約をキャンセルしますか？')) return; await fetch(`../api/admin/reservations/${button.dataset.id}`, { method: 'DELETE' }); draw(); });
 }
 draw();

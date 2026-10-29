@@ -4,6 +4,9 @@ if (form) {
   const type = document.querySelector('#patient-type');
   const cardField = document.querySelector('#card-number-field');
   const card = document.querySelector('#card-number');
+  const name = document.querySelector('#patient-name');
+  name.closest('label').insertAdjacentHTML('afterend', '<label>フリガナ<input id="patient-kana" required autocomplete="off"></label>');
+  const kana = document.querySelector('#patient-kana');
   const result = document.querySelector('#reservation-result');
   const availability = document.querySelector('#availability');
   date.min = new Date().toISOString().slice(0, 10);
@@ -24,7 +27,7 @@ if (form) {
   form.addEventListener('submit', async event => {
     event.preventDefault();
     result.classList.remove('is-error');
-    const payload = { patientType: type.value, department: document.querySelector('#department').value, cardNumber: card.value, patientName: document.querySelector('#patient-name').value, patientPhone: document.querySelector('#patient-phone').value, reserveDate: date.value, reserveTime: document.querySelector('#reserve-time').value };
+    const payload = { patientType: type.value, department: document.querySelector('#department').value, cardNumber: card.value, patientName: name.value, patientKana: kana.value, patientPhone: document.querySelector('#patient-phone').value, reserveDate: date.value, reserveTime: document.querySelector('#reserve-time').value };
     const response = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await response.json();
     result.textContent = data.message || data.error;

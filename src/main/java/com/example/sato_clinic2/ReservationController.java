@@ -54,10 +54,11 @@ public class ReservationController {
         try {
             jdbc.update("""
                     INSERT INTO reservations
-                    (patient_type, card_number, department, patient_name, patient_phone, reserve_date, reserve_time)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (patient_type, card_number, department, patient_name, patient_kana, patient_phone, reserve_date, reserve_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """, request.patientType(), blankToNull(request.cardNumber()), request.department().trim(),
-                    request.patientName().trim(), request.patientPhone().trim(), LocalDate.parse(request.reserveDate()),
+                    request.patientName().trim(), request.patientKana().trim(), request.patientPhone().trim(),
+                    LocalDate.parse(request.reserveDate()),
                     request.reserveTime());
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "予約を受け付けました。"));
         } catch (DuplicateKeyException e) {
@@ -70,7 +71,7 @@ public class ReservationController {
         if (!AdminAuthController.isLoggedIn(request)) return error(HttpStatus.UNAUTHORIZED, "ログインが必要です。");
         return ResponseEntity.ok(jdbc.queryForList("""
                 SELECT id, patient_type AS patientType, card_number AS cardNumber, department,
-                       patient_name AS name, patient_phone AS phone, reserve_date AS date,
+                       patient_name AS name, patient_kana AS kana, patient_phone AS phone, reserve_date AS date,
                        reserve_time AS time, status, created_at AS createdAt
                 FROM reservations WHERE status = 'booked' ORDER BY reserve_date, reserve_time
                 """));
@@ -93,11 +94,11 @@ public class ReservationController {
     }
 
     public record ReservationRequest(String patientType, String cardNumber, String department,
-            String patientName, String patientPhone, String reserveDate, String reserveTime) {
+            String patientName, String patientKana, String patientPhone, String reserveDate, String reserveTime) {
         String validate() {
-            if (patientType == null || department == null || patientName == null || patientPhone == null
+            if (patientType == null || department == null || patientName == null || patientKana == null || patientPhone == null
                     || reserveDate == null || reserveTime == null
-                    || List.of(patientType, department, patientName, patientPhone, reserveDate, reserveTime)
+                    || List.of(patientType, department, patientName, patientKana, patientPhone, reserveDate, reserveTime)
                             .stream().anyMatch(String::isBlank)) return "必須項目を入力してください。";
             if (!patientType.equals("new") && !patientType.equals("existing")) return "患者区分が正しくありません。";
             if (patientType.equals("existing") && (cardNumber == null || !cardNumber.matches("\\d{8}")))
