@@ -64,7 +64,7 @@ app.post('/api/reservations', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   const { loginId, password } = req.body || {};
-  const ok = loginId === (process.env.ADMIN_ID || 'admin') && password === (process.env.ADMIN_PASSWORD || 'change-this-admin-password');
+  const ok = loginId === (process.env.ADMIN_ID || 'admin') && password === (process.env.ADMIN_PASSWORD || 'edix');
   if (!ok) return res.status(401).json({ error: 'IDまたはパスワードが正しくありません。' });
   const token = jwt.sign({ loginId }, process.env.JWT_SECRET || 'development-secret', { expiresIn: '8h' });
   res.cookie('sato_admin', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 8 * 60 * 60 * 1000 });
