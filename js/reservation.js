@@ -1,9 +1,36 @@
-const k='satoClinicReservations',times=['09:00〜10:00','10:00〜11:00','11:00〜12:00','13:00〜14:00','14:00〜15:00','15:00〜16:00','16:00〜17:00','17:00〜18:00'];const f=document.querySelector('#reservation-form'),d=document.querySelector('#reserve-date'),a=document.querySelector('#availability'),type=document.querySelector('#patient-type'),cardField=document.querySelector('#card-number-field'),card=document.querySelector('#card-number'),department=document.querySelector('#department');const list=()=>JSON.parse(localStorage.getItem(k)||'[]');const draw=()=>a.innerHTML=d.value?times.map(t=>`<p>${t}：${list().some(r=>r.date===d.value&&r.time===t)?'予約済み':'予約可能'}</p>`).join(''):'日付を選択してください。';const updateCard=()=>{const existing=type.value==='existing';cardField.hidden=!existing;card.required=existing;if(!existing)card.value=''};d.min=new Date().toISOString().slice(0,10);d.onchange=draw;type.onchange=updateCard;f.onsubmit=e=>{e.preventDefault();const time=document.querySelector('#reserve-time').value;if(list().some(r=>r.date===d.value&&r.time===time)){document.querySelector('#reservation-result').textContent='その時間帯はすでに予約済みです。';return}let x=list();x.push({id:Date.now(),type:type.value,cardNumber:card.value,department:department.value,name:document.querySelector('#patient-name').value,phone:document.querySelector('#patient-phone').value,date:d.value,time});localStorage.setItem(k,JSON.stringify(x));document.querySelector('#reservation-result').textContent='予約を受け付けました。';f.reset();updateCard();draw()};updateCard();draw();
-document.addEventListener('DOMContentLoaded',()=>{const department=document.querySelector('#department');if(!department)return;department.innerHTML='<option value="">選択してください</option><option>内科</option><option>循環器内科</option><option>呼吸器内科</option><option>生活習慣病</option><option>予防接種</option><option>健康診断</option><option>発熱外来</option>'});
-document.addEventListener('DOMContentLoaded',()=>{const department=document.querySelector('#department');if(department&&department.options.length)department.options[department.options.length-1].textContent='禁煙外来'});
-document.addEventListener('DOMContentLoaded',()=>{const department=document.querySelector('#department');const option=[...department.options].find(item=>item.textContent==='予防接種');if(option)option.textContent='予防接種・各種検査'});
-document.addEventListener('DOMContentLoaded',()=>{const name=document.querySelector('#patient-name'),phone=document.querySelector('#patient-phone');if(!name||!phone||document.querySelector('#patient-kana'))return;phone.closest('label').insertAdjacentHTML('beforebegin','<label>フリガナ<input id="patient-kana" required autocomplete="ひらがな"></label>')});
-document.addEventListener('DOMContentLoaded',()=>{const name=document.querySelector('#patient-name'),kana=document.querySelector('#patient-kana'),phone=document.querySelector('#patient-phone');if(name)name.placeholder='佐藤 太郎';if(kana)kana.placeholder='サトウ タロウ';if(phone)phone.placeholder='03-1234-5678'});
-document.addEventListener('DOMContentLoaded',()=>{const card=document.querySelector('#card-number');if(card)card.placeholder='12345678'});
-document.addEventListener('DOMContentLoaded',()=>{const form=document.querySelector('#reservation-form');if(!form)return;form.addEventListener('submit',()=>{const kana=document.querySelector('#patient-kana');if(!kana)return;setTimeout(()=>{const records=JSON.parse(localStorage.getItem(k)||'[]');if(records.length)records[records.length-1].kana=kana.value;localStorage.setItem(k,JSON.stringify(records))},0)},true)});
-document.addEventListener('DOMContentLoaded',()=>{const form=document.querySelector('#reservation-form');if(!form)return;const result=document.querySelector('#reservation-result');const fields={department:document.querySelector('#department'),name:document.querySelector('#patient-name'),kana:document.querySelector('#patient-kana'),phone:document.querySelector('#patient-phone'),date:document.querySelector('#reserve-date'),time:document.querySelector('#reserve-time'),card:document.querySelector('#card-number')};const clearErrors=()=>{form.querySelectorAll('.field-error').forEach(error=>error.remove());Object.values(fields).filter(Boolean).forEach(field=>{field.removeAttribute('aria-invalid');field.setCustomValidity('')})};const showError=(field,message)=>{field.setAttribute('aria-invalid','true');field.setCustomValidity(message);const error=document.createElement('span');error.className='field-error';error.textContent=message;field.insertAdjacentElement('afterend',error)};form.addEventListener('submit',event=>{clearErrors();const errors=[];const add=(field,message)=>{showError(field,message);errors.push(field)};if(!fields.department.value)add(fields.department,'診療科目を選択してください。');if(!fields.name.value.trim())add(fields.name,'お名前を入力してください。');if(fields.kana){if(!fields.kana.value.trim())add(fields.kana,'フリガナを入力してください。');else if(!/^[ァ-ヶー\s　]+$/.test(fields.kana.value.trim()))add(fields.kana,'フリガナは全角カタカナで入力してください。')}const phoneDigits=fields.phone.value.replace(/[^0-9]/g,'');if(!phoneDigits)add(fields.phone,'電話番号を入力してください。');else if(!/^0\d{9,10}$/.test(phoneDigits))add(fields.phone,'電話番号を正しく入力してください。');if(!fields.date.value)add(fields.date,'予約日を選択してください。');else if(fields.date.value<fields.date.min)add(fields.date,'本日以降の日付を選択してください。');if(!fields.time.value)add(fields.time,'予約時間を選択してください。');if(fields.card.required){if(!fields.card.value.trim())add(fields.card,'診察券番号を入力してください。');else if(!/^\d{8}$/.test(fields.card.value.trim()))add(fields.card,'診察券番号は8桁の数字で入力してください。')}if(!errors.length)return;event.preventDefault();event.stopImmediatePropagation();result.textContent='入力内容を確認してください。';result.classList.add('is-error');errors[0].focus()},true);Object.values(fields).filter(Boolean).forEach(field=>field.addEventListener('input',()=>{field.removeAttribute('aria-invalid');field.setCustomValidity('');field.parentElement.querySelector('.field-error')?.remove();if(!form.querySelector('.field-error'))result.classList.remove('is-error')}))});
+const form = document.querySelector('#reservation-form');
+if (form) {
+  const date = document.querySelector('#reserve-date');
+  const type = document.querySelector('#patient-type');
+  const cardField = document.querySelector('#card-number-field');
+  const card = document.querySelector('#card-number');
+  const result = document.querySelector('#reservation-result');
+  const availability = document.querySelector('#availability');
+  date.min = new Date().toISOString().slice(0, 10);
+  const updateCard = () => {
+    const existing = type.value === 'existing';
+    cardField.hidden = !existing;
+    card.required = existing;
+    if (!existing) card.value = '';
+  };
+  const draw = async () => {
+    if (!date.value) { availability.textContent = '日付を選択してください。'; return; }
+    const response = await fetch(`/api/availability?date=${encodeURIComponent(date.value)}`);
+    const data = await response.json();
+    availability.innerHTML = data.slots.map(slot => `<p>${slot.time}：${slot.available ? '予約可能' : '予約済み'}</p>`).join('');
+  };
+  type.addEventListener('change', updateCard);
+  date.addEventListener('change', draw);
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    result.classList.remove('is-error');
+    const payload = { patientType: type.value, department: document.querySelector('#department').value, cardNumber: card.value, patientName: document.querySelector('#patient-name').value, patientPhone: document.querySelector('#patient-phone').value, reserveDate: date.value, reserveTime: document.querySelector('#reserve-time').value };
+    const response = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await response.json();
+    result.textContent = data.message || data.error;
+    if (!response.ok) result.classList.add('is-error');
+    else { form.reset(); updateCard(); draw(); }
+  });
+  updateCard();
+  draw();
+}

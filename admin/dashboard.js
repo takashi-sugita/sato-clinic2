@@ -1,1 +1,11 @@
-const login=document.querySelector('#login-form'),dashboard=document.querySelector('#dashboard');const show=()=>{login.hidden=true;dashboard.hidden=false};if(localStorage.getItem('satoClinicAdmin')==='true')show();login.addEventListener('submit',e=>{e.preventDefault();if(document.querySelector('#login-id').value==='admin'&&document.querySelector('#login-pass').value==='edix'){localStorage.setItem('satoClinicAdmin','true');show()}else document.querySelector('#login-error').textContent='IDまたはパスワードが正しくありません。'});document.querySelector('#logout').addEventListener('click',()=>{localStorage.removeItem('satoClinicAdmin');location.reload()});
+const login = document.querySelector('#login-form');
+const dashboard = document.querySelector('#dashboard');
+const show = () => { login.hidden = true; dashboard.hidden = false; };
+fetch('/api/auth/me').then(response => { if (response.ok) show(); });
+login.addEventListener('submit', async event => {
+  event.preventDefault();
+  const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginId: document.querySelector('#login-id').value, password: document.querySelector('#login-pass').value }) });
+  if (response.ok) show();
+  else document.querySelector('#login-error').textContent = 'IDまたはパスワードが正しくありません。';
+});
+document.querySelector('#logout').addEventListener('click', async () => { await fetch('/api/auth/logout', { method: 'POST' }); location.reload(); });
